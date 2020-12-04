@@ -9,6 +9,7 @@ MongoDB へ登録したホロジュールのホロライブスケジュールと
 * PowerShell 7.1 x64
 * Visual Studio Code 1.51.1 x64
 * Git for Windows 2.27.0 x64
+* MongoDB 4.4.1 x64
 
 ## Poetry と pyenv の確認
 
