@@ -21,6 +21,8 @@ db.authenticate(name=mongodb_user,password=mongodb_password)
 
 # Flask
 api = Flask(__name__)
+# JSONのソートを抑止
+api.config['JSON_SORT_KEYS'] = False
 
 # ホロジュール配信予定の取得
 @api.route('/Holodules/<string:date>', methods=['GET'])
@@ -28,9 +30,9 @@ def get_Holodules(date):
     if len(date) != 8:
         abort(500)
 
-    # MongoDB から年月日を条件にホロジュール配信予定を取得してオブジェクトに格納
+    # MongoDB から年月日を条件にホロジュール配信予定を取得してリストに格納
     holodule_list = []
-    for doc in db.holodules.find({"datetime": {'$regex':'^'+date}}):
+    for doc in db.holodules.find({"datetime": {'$regex':'^'+date}}).sort("datetime", -1):
         holodule = Holodule.from_doc(doc)
         holodule_list.append(holodule)
 
@@ -46,8 +48,10 @@ def get_Holodules(date):
         "result":len(holodule_list),
         "data":data
     }
-    # return make_response(jsonify(result))
-    return make_response(json.dumps(result, ensure_ascii=False))
+    # UTF-8コード、Content-Type は application/json
+    return make_response(jsonify(result))
+    # UTF-8文字、Content-Type は text/html; charset=utf-8
+    # return make_response(json.dumps(result, ensure_ascii=False))
 
 # エラーハンドラ：404
 @api.errorhandler(404)

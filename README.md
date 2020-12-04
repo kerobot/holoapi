@@ -60,3 +60,7 @@ MongoDB shell version v4.4.1
 ```powershell
 > poetry run python holoapi.py
 ```
+
+```text
+http://127.0.0.1:8888/Holodules/20201011
+```
