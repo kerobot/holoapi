@@ -59,7 +59,7 @@ MongoDB shell version v4.4.1
 ## プログラムの実行
 
 ```powershell
-> poetry run python holoapi.py
+> poetry run python application.py
 ```
 
 ```text
