@@ -1,5 +1,4 @@
 import os
-import urllib.request
 from dotenv import load_dotenv
 
 class Settings:
@@ -26,11 +25,3 @@ class Settings:
     @property
     def mongodb_host(self):
         return self.__mongodb_host
-
-    # 指定したURLにアクセスできるかをチェック
-    def __check_url(self, url):
-        try:
-            with urllib.request.urlopen(url):
-                return True
-        except urllib.request.HTTPError:
-            return False

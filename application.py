@@ -1,10 +1,10 @@
 from flask import Flask, jsonify, request, abort, make_response
-from os.path import join, dirname
 from pymongo import MongoClient
+from os.path import join, dirname
 import json
 from urllib.parse import quote_plus
-from app.settings import Settings
-from app.holodule import Holodule
+from config.settings import Settings
+from models.holodule import Holodule
 
 # Settings インスタンス
 settings = Settings(join(dirname(__file__), '.env'))
@@ -20,12 +20,12 @@ db = client.holoduledb
 db.authenticate(name=mongodb_user,password=mongodb_password)
 
 # Flask
-api = Flask(__name__)
+app = Flask(__name__)
 # JSONのソートを抑止
-api.config['JSON_SORT_KEYS'] = False
+app.config['JSON_SORT_KEYS'] = False
 
 # ホロジュール配信予定の取得
-@api.route('/Holodules/<string:date>', methods=['GET'])
+@app.route('/Holodules/<string:date>', methods=['GET'])
 def get_Holodules(date):
     if len(date) != 8:
         abort(500)
@@ -54,14 +54,14 @@ def get_Holodules(date):
     # return make_response(json.dumps(result, ensure_ascii=False))
 
 # エラーハンドラ：404
-@api.errorhandler(404)
+@app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 # エラーハンドラ：500
-@api.errorhandler(500)
+@app.errorhandler(500)
 def internal_server_error(error):
     return make_response(jsonify({'error': 'Internal Server Error'}), 500)
 
 if __name__ == "__main__":
-    api.run(port=8888)
+    app.run(port=8888)
