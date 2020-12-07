@@ -64,4 +64,4 @@ def internal_server_error(error):
     return make_response(jsonify({'error': 'Internal Server Error'}), 500)
 
 if __name__ == "__main__":
-    app.run(port=8888)
+    app.run()
