@@ -28,6 +28,14 @@ pyenv 2.64.2
 MongoDB shell version v4.4.1
 ```
 
+## Python 環境設定
+
+```powershell
+> pyenv versions
+> pyenv install 3.8.5
+> pyenv local 3.8.5
+```
+
 ## パッケージのインストール
 
 ```powershell
@@ -59,9 +67,9 @@ MongoDB shell version v4.4.1
 ## プログラムの実行
 
 ```powershell
-> poetry run python application.py
+> poetry run python app.py
 ```
 
 ```text
-http://127.0.0.1:8888/Holodules/20201011
+http://127.0.0.1:5000/Holodules/20201011
 ```
