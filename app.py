@@ -24,6 +24,10 @@ app = Flask(__name__)
 # JSONのソートを抑止
 app.config['JSON_SORT_KEYS'] = False
 
+@app.route('/')
+def index():
+    return 'holoapi'
+
 # ホロジュール配信予定の取得
 @app.route('/Holodules/<string:date>', methods=['GET'])
 def get_Holodules(date):
