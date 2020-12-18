@@ -3,8 +3,14 @@ from pymongo import MongoClient
 from os.path import join, dirname
 import json
 from urllib.parse import quote_plus
-from config.settings import Settings
 from models.holodule import Holodule
+from settings import Settings
+from logger import log, get_logger
+
+# ロギングの設定
+json_path = join(dirname(__file__), "config/logger.json")
+log_dir = join(dirname(__file__), "log")
+logger = get_logger(log_dir, json_path, False)
 
 # Settings インスタンス
 settings = Settings(join(dirname(__file__), '.env'))
@@ -24,13 +30,17 @@ app = Flask(__name__)
 # JSONのソートを抑止
 app.config['JSON_SORT_KEYS'] = False
 
+@log(logger)
 @app.route('/')
 def index():
+    logger.info(f"holoapi")
     return 'holoapi'
 
 # ホロジュール配信予定の取得
+@log(logger)
 @app.route('/Holodules/<string:date>', methods=['GET'])
 def get_Holodules(date):
+    logger.info(f"Holodules/{date}")
     if len(date) != 8:
         abort(500)
 
@@ -58,13 +68,17 @@ def get_Holodules(date):
     # return make_response(json.dumps(result, ensure_ascii=False))
 
 # エラーハンドラ：404
+@log(logger)
 @app.errorhandler(404)
 def not_found(error):
+    logger.error(f"{error}")
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 # エラーハンドラ：500
+@log(logger)
 @app.errorhandler(500)
 def internal_server_error(error):
+    logger.error(f"{error}")
     return make_response(jsonify({'error': 'Internal Server Error'}), 500)
 
 if __name__ == "__main__":

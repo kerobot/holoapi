@@ -1,0 +1,39 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "root": {
+      "level": "INFO",
+      "handlers": [
+        "consoleHandler",
+        "rotateFileHandler"
+      ]
+    },
+    "handlers": {
+      "consoleHandler": {
+        "class": "logging.StreamHandler",
+        "level": "INFO",
+        "formatter": "consoleFormatter",
+        "stream": "ext://sys.stdout"
+      },
+      "rotateFileHandler": {
+        "class": "logging.handlers.TimedRotatingFileHandler",
+        "level": "INFO",
+        "formatter": "rotateFileFormatter",
+        "filename": "./log/yyyymmdd.log",
+        "encoding": "utf-8",
+        "when": "MIDNIGHT",
+        "backupCount": "31"
+      }
+    },
+    "formatters": {
+      "consoleFormatter": {
+        "format": "[%(levelname)-8s]%(funcName)s - %(message)s",
+        "datefmt": "%Y-%m-%d %H:%M:%S"
+      },
+      "rotateFileFormatter": {
+        "format": "%(asctime)s|%(levelname)-8s|%(name)s|%(funcName)s|%(message)s",
+        "datefmt": "%Y-%m-%d %H:%M:%S"
+      }
+    }
+  }
+  
