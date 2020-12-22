@@ -108,6 +108,8 @@ class Holodule:
     # ドキュメントから変換
     @classmethod
     def from_doc(cls, doc):
+        if doc is None:
+            return None
         holodule = Holodule(doc['video_id'], 
                             datetime.datetime.strptime(doc['datetime'], '%Y%m%d %H%M%S'), 
                             doc['name'], 

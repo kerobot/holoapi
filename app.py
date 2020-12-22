@@ -1,9 +1,11 @@
 from flask import Flask, jsonify, request, abort, make_response
+from flask_jwt import jwt_required, current_identity, JWT
 from pymongo import MongoClient
 from os.path import join, dirname
 import json
 from urllib.parse import quote_plus
 from models.holodule import Holodule
+from models.user import User
 from settings import Settings
 from logger import log, get_logger
 
@@ -25,10 +27,26 @@ client = MongoClient(mongodb_host)
 db = client.holoduledb
 db.authenticate(name=mongodb_user,password=mongodb_password)
 
+def authoricate(username, password):
+    user = User.from_doc(db.users.find_one({"username": username}))
+    authenticated = True if user is not None and user.password == password else False
+    return user if authenticated else None
+
+def identity(payload):
+    user_id = payload['identity']
+    user = User.from_doc(db.users.find_one({"id": user_id}))
+    return user
+
 # Flask
 app = Flask(__name__)
 # JSONのソートを抑止
 app.config['JSON_SORT_KEYS'] = False
+# Flask JWT
+app.config['JWT_SECRET_KEY'] = settings.jwt_secret_key
+app.config['JWT_ALGORITHM'] = 'HS256'
+app.config['JWT_LEEWAY'] = 0
+app.config['JWT_AUTH_URL_RULE'] = '/auth'
+jwt = JWT(app, authoricate, identity)
 
 @log(logger)
 @app.route('/')
@@ -39,6 +57,7 @@ def index():
 # ホロジュール配信予定の取得
 @log(logger)
 @app.route('/Holodules/<string:date>', methods=['GET'])
+@jwt_required()
 def get_Holodules(date):
     logger.info(f"Holodules/{date}")
     if len(date) != 8:

@@ -10,6 +10,7 @@ class Settings:
         self.__mongodb_user = os.environ.get("MONGODB_USER")
         self.__mongodb_password = os.environ.get("MONGODB_PASSWORD")
         self.__mongodb_host = os.environ.get("MONGODB_HOST")
+        self.__jwt_secret_key = os.environ.get("JWT_SECRET_KEY")
 
     # mongodb の ユーザー
     @property
@@ -25,3 +26,8 @@ class Settings:
     @property
     def mongodb_host(self):
         return self.__mongodb_host
+
+    # JWT の秘密鍵
+    @property
+    def jwt_secret_key(self):
+        return self.__jwt_secret_key
