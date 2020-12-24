@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, request, abort, make_response
+import json
+from flask import Flask, jsonify, request, abort, make_response, current_app
 from flask_jwt import jwt_required, current_identity, JWT
 from pymongo import MongoClient
 from os.path import join, dirname
-import json
 from urllib.parse import quote_plus
+from datetime import timedelta, datetime
 from models.holodule import Holodule
 from models.user import User
 from settings import Settings
@@ -27,14 +28,17 @@ client = MongoClient(mongodb_host)
 db = client.holoduledb
 db.authenticate(name=mongodb_user,password=mongodb_password)
 
+# ユーザー名とパスワードを用いて認証情報を検証するコールバック関数
 def authoricate(username, password):
     user = User.from_doc(db.users.find_one({"username": username}))
     authenticated = True if user is not None and user.password == password else False
     return user if authenticated else None
 
+# JWTペイロードをもとにユーザー情報を取得するコールバック関数
 def identity(payload):
-    user_id = payload['identity']
-    user = User.from_doc(db.users.find_one({"id": user_id}))
+    # @jwt.jwt_payload_handler でJWTペイロードをカスタマイズし、identity をユーザー名にしている
+    username = payload['identity']
+    user = User.from_doc(db.users.find_one({"username": username}))
     return user
 
 # Flask
@@ -42,17 +46,22 @@ app = Flask(__name__)
 # JSONのソートを抑止
 app.config['JSON_SORT_KEYS'] = False
 # Flask JWT
-app.config['JWT_SECRET_KEY'] = settings.jwt_secret_key
-app.config['JWT_ALGORITHM'] = 'HS256'
-app.config['JWT_LEEWAY'] = 0
-app.config['JWT_AUTH_URL_RULE'] = '/auth'
-jwt = JWT(app, authoricate, identity)
+app.config['JWT_SECRET_KEY'] = settings.jwt_secret_key      # JWTに署名する際の秘密鍵
+app.config['JWT_ALGORITHM'] = 'HS256'                       # 暗号化署名のアルゴリズム
+app.config['JWT_LEEWAY'] = 0                                # 有効期限に対する余裕時間
+app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=300) # トークンの有効期間
+app.config['JWT_NOT_BEFORE_DELTA'] = timedelta(seconds=0)   # トークンの使用を開始する相対時間
+app.config['JWT_AUTH_URL_RULE'] = '/auth'                   # 認証エンドポイントURL
+jwt = JWT(app, authoricate, identity)                       # ここで上記2つの関数を指定
 
-@log(logger)
-@app.route('/')
-def index():
-    logger.info(f"holoapi")
-    return 'holoapi'
+# JWTペイロードのカスタマイズ
+@jwt.jwt_payload_handler
+def make_payload(identity):
+    iat = datetime.utcnow()
+    exp = iat + current_app.config.get('JWT_EXPIRATION_DELTA') 
+    nbf = iat + current_app.config.get('JWT_NOT_BEFORE_DELTA')
+    identity = getattr(identity, 'username')
+    return {'exp': exp, 'iat': iat, 'nbf': nbf, 'identity': identity}
 
 # ホロジュール配信予定の取得
 @log(logger)
