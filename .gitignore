@@ -7,3 +7,4 @@ env/
 venv/
 .python-version
 *.log
+*.conf

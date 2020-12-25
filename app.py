@@ -65,10 +65,10 @@ def make_payload(identity):
 
 # ホロジュール配信予定の取得
 @log(logger)
-@app.route('/Holodules/<string:date>', methods=['GET'])
+@app.route('/holodules/<string:date>', methods=['GET'])
 @jwt_required()
 def get_Holodules(date):
-    logger.info(f"Holodules/{date}")
+    logger.info(f"holodules/{date}")
     if len(date) != 8:
         abort(500)
 
@@ -82,13 +82,13 @@ def get_Holodules(date):
         abort(404)
 
     # オブジェクトをもとに辞書を構築してJSONとして返却
-    data = {}
+    holodules = []
     for holodule in holodule_list:
         doc = holodule.to_doc()
-        data[doc['key']] = doc
+        holodules.append(doc)
     result = {
         "result":len(holodule_list),
-        "data":data
+        "holodules":holodules
     }
     # UTF-8コード、Content-Type は application/json
     return make_response(jsonify(result))
