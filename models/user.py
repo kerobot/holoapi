@@ -1,8 +1,10 @@
 class User:
-    def __init__(self, id, username, password):
+    def __init__(self, id, username, password, firstname, lastname):
         self.__id = id
         self.__username = username
         self.__password = password
+        self.__firstname = firstname
+        self.__lastname = lastname
 
     # id
     @property
@@ -31,6 +33,24 @@ class User:
     def password(self, password):
         self.__password = password
 
+    # firstname
+    @property
+    def firstname(self):
+        return self.__firstname
+
+    @firstname.setter
+    def firstname(self, firstname):
+        self.__firstname = firstname
+
+    # lastname
+    @property
+    def lastname(self):
+        return self.__lastname
+
+    @lastname.setter
+    def lastname(self, lastname):
+        self.__lastname = lastname
+
     # ドキュメントから変換
     @classmethod
     def from_doc(cls, doc):
@@ -38,12 +58,16 @@ class User:
             return None
         user = User(doc['id'], 
                     doc['username'], 
-                    doc['password'])
+                    doc['password'],
+                    doc['firstname'],
+                    doc['lastname'])
         return user
 
     # ドキュメントへ変換
     def to_doc(self):
         doc = { 'id': str(self.id),
                 'username': str(self.username),
-                'password' : str(self.password) }
+                'password' : str(self.password),
+                'firstname' : str(self.firstname),
+                'lastname' : str(self.lastname) }
         return doc

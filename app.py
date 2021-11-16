@@ -68,6 +68,7 @@ def make_payload(identity):
 @app.route('/holodules/<string:date>', methods=['GET'])
 @jwt_required()
 def get_Holodules(date):
+    logger.info(f"{getattr(current_identity, 'username')}")
     logger.info(f"holodules/{date}")
     if len(date) != 8:
         abort(500)
