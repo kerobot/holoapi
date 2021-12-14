@@ -1,6 +1,7 @@
 import json
 from flask import Flask, jsonify, request, abort, make_response, current_app
 from flask_jwt import jwt_required, current_identity, JWT
+from flask_cors import CORS, cross_origin
 from pymongo import MongoClient
 from os.path import join, dirname
 from urllib.parse import quote_plus
@@ -43,6 +44,8 @@ def identity(payload):
 
 # Flask
 app = Flask(__name__)
+# CORS
+CORS(app)
 # JSONのソートを抑止
 app.config['JSON_SORT_KEYS'] = False
 # Flask JWT
@@ -53,6 +56,14 @@ app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=300) # トークンの有
 app.config['JWT_NOT_BEFORE_DELTA'] = timedelta(seconds=0)   # トークンの使用を開始する相対時間
 app.config['JWT_AUTH_URL_RULE'] = '/auth'                   # 認証エンドポイントURL
 jwt = JWT(app, authoricate, identity)                       # ここで上記2つの関数を指定
+
+# レスポンスにCORS許可のヘッダーを付与
+@app.after_request
+def after_request(response):
+    # response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # JWTペイロードのカスタマイズ
 @jwt.jwt_payload_handler
