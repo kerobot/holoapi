@@ -44,10 +44,7 @@ class Holodule:
     }
 
     def __init__(self, code="", video_id="", datetime=None, name="", title="", url="", description=""):
-        if len(code) == 0:
-            self.__code = Holodule.codes[name] if name in Holodule.codes else ""
-        else:
-            self.__code = code
+        self.__code = code
         self.__video_id = video_id
         self.__datetime = datetime
         self.__name = name
@@ -127,7 +124,8 @@ class Holodule:
     def from_doc(cls, doc):
         if doc is None:
             return None
-        holodule = Holodule(doc['code'],
+        # 2022/2/19 code value added.
+        holodule = Holodule(doc['code'] if 'code' in doc else Holodule.codes[doc['name']],
                             doc['video_id'], 
                             datetime.datetime.strptime(doc['datetime'], '%Y%m%d %H%M%S'), 
                             doc['name'], 
