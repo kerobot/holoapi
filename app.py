@@ -108,9 +108,6 @@ def holodules(date):
     for holodule in db.holodules.find({"datetime": {'$regex':'^'+date}}).sort("datetime", -1):
         holodule_list.append(Holodule.from_doc(holodule))
 
-    if len(holodule_list) == 0:
-        abort(404)
-
     # オブジェクトリストをJSON配列に変換
     holodules = []
     for holodule in holodule_list:
