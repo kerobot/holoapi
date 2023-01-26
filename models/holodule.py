@@ -124,7 +124,6 @@ class Holodule:
     def from_doc(cls, doc):
         if doc is None:
             return None
-        # 2022/2/19 code value added.
         holodule = Holodule(doc['code'] if 'code' in doc else Holodule.codes[doc['name']],
                             doc['video_id'], 
                             datetime.datetime.strptime(doc['datetime'], '%Y%m%d %H%M%S'), 

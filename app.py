@@ -1,6 +1,7 @@
 import json
 from flask import Flask, jsonify, request, abort, make_response, current_app
-from flask_jwt import jwt_required, current_identity, JWT
+from flask import jsonify, request, Flask
+from flask_jwt_extended import jwt_required, create_access_token, JWTManager, get_jwt_identity
 from flask_cors import CORS, cross_origin
 from pymongo import MongoClient
 from os.path import join, dirname
@@ -29,25 +30,16 @@ client = MongoClient(mongodb_host)
 db = client.holoduledb
 db.authenticate(name=mongodb_user,password=mongodb_password)
 
-# ユーザー名とパスワードを用いて認証情報を検証するコールバック関数
-def authoricate(username, password):
-    user = User.from_doc(db.users.find_one({"username": username}))
-    authenticated = True if user is not None and user.password == password else False
-    return user if authenticated else None
-
-# JWTペイロードをもとにユーザー情報を取得するコールバック関数
-def identity(payload):
-    # @jwt.jwt_payload_handler でJWTペイロードをカスタマイズし、identity をユーザー名にしている
-    username = payload['identity']
-    user = User.from_doc(db.users.find_one({"username": username}))
-    return user
-
 # Flask
 app = Flask(__name__)
+app.url_map.strict_slashes = False
+
 # CORS
 CORS(app)
+
 # JSONのソートを抑止
 app.config['JSON_SORT_KEYS'] = False
+
 # Flask JWT
 app.config['JWT_SECRET_KEY'] = settings.jwt_secret_key      # JWTに署名する際の秘密鍵
 app.config['JWT_ALGORITHM'] = 'HS256'                       # 暗号化署名のアルゴリズム
@@ -55,7 +47,16 @@ app.config['JWT_LEEWAY'] = 0                                # 有効期限に対
 app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=300) # トークンの有効期間
 app.config['JWT_NOT_BEFORE_DELTA'] = timedelta(seconds=0)   # トークンの使用を開始する相対時間
 app.config['JWT_AUTH_URL_RULE'] = '/auth'                   # 認証エンドポイントURL
-jwt = JWT(app, authoricate, identity)                       # ここで上記2つの関数を指定
+
+# JWT の認証エラーハンドラ
+@log(logger)
+def jwt_unauthorized_loader_handler(reason):
+    logger.error(f"{reason}")
+    return make_response(jsonify({'error': 'Unauthorized'}), 401)
+
+# JWT
+jwt = JWTManager(app)
+jwt.unauthorized_loader(jwt_unauthorized_loader_handler)
 
 # レスポンスにCORS許可のヘッダーを付与
 @app.after_request
@@ -65,47 +66,72 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
-# JWTペイロードのカスタマイズ
-@jwt.jwt_payload_handler
-def make_payload(identity):
-    iat = datetime.utcnow()
-    exp = iat + current_app.config.get('JWT_EXPIRATION_DELTA') 
-    nbf = iat + current_app.config.get('JWT_NOT_BEFORE_DELTA')
-    identity = getattr(identity, 'username')
-    return {'exp': exp, 'iat': iat, 'nbf': nbf, 'identity': identity}
+# ログインしてトークンを返却
+@log(logger)
+@app.route('/login', methods=['POST'])
+def login():
+    if not request.is_json:
+        abort(400)
 
-# ホロジュール配信予定の取得
+    request_body = request.get_json()
+    if request_body is None:
+        abort(400)
+
+    whitelist = {'username', 'password'}
+    if not request_body.keys() <= whitelist:
+        abort(400)
+
+    user = User.from_doc(db.users.find_one({"username": request_body['username']}))
+    authenticated = True if user is not None and user.password == request_body['password'] else False
+    auth_user = user if authenticated else None
+
+    if auth_user is None:
+        abort(401)
+
+    access_token = create_access_token(identity=auth_user.username)
+    response_body = {'access_token': access_token}
+    return make_response(jsonify(response_body), 200)
+
+# ホロジュール配信予定を取得
 @log(logger)
 @app.route('/holodules/<string:date>', methods=['GET'])
 @jwt_required()
-def get_Holodules(date):
-    logger.info(f"{getattr(current_identity, 'username')}")
-    logger.info(f"holodules/{date}")
+def holodules(date):
+    logger.info(f"username: {get_jwt_identity()}")
+    logger.info(f"date: {date}")
+
     if len(date) != 8:
         abort(500)
 
     # MongoDB から年月日を条件にホロジュール配信予定を取得してリストに格納
     holodule_list = []
-    for doc in db.holodules.find({"datetime": {'$regex':'^'+date}}).sort("datetime", -1):
-        holodule = Holodule.from_doc(doc)
-        holodule_list.append(holodule)
+    for holodule in db.holodules.find({"datetime": {'$regex':'^'+date}}).sort("datetime", -1):
+        holodule_list.append(Holodule.from_doc(holodule))
 
     if len(holodule_list) == 0:
         abort(404)
 
-    # オブジェクトをもとに辞書を構築してJSONとして返却
+    # オブジェクトリストをJSON配列に変換
     holodules = []
     for holodule in holodule_list:
-        doc = holodule.to_doc()
-        holodules.append(doc)
-    result = {
-        "result":len(holodule_list),
-        "holodules":holodules
-    }
-    # UTF-8コード、Content-Type は application/json
-    return make_response(jsonify(result))
-    # UTF-8文字、Content-Type は text/html; charset=utf-8
-    # return make_response(json.dumps(result, ensure_ascii=False))
+        holodules.append(holodule.to_doc())
+
+    # UTF-8コードの application/json として返却
+    return make_response(jsonify(holodules), 200)
+
+# エラーハンドラ：400
+@log(logger)
+@app.errorhandler(400)
+def bad_request(error):
+    logger.error(f"{error}")
+    return make_response(jsonify({'error': 'Bad request'}), 400)
+
+# エラーハンドラ：401
+@log(logger)
+@app.errorhandler(401)
+def Unauthorized(error):
+    logger.error(f"{error}")
+    return make_response(jsonify({'error': 'Unauthorized'}), 401)
 
 # エラーハンドラ：404
 @log(logger)
