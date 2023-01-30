@@ -2,11 +2,11 @@ import json
 from flask import Flask, jsonify, request, abort, make_response, current_app
 from flask import jsonify, request, Flask
 from flask_jwt_extended import jwt_required, create_access_token, JWTManager, get_jwt_identity
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from pymongo import MongoClient
 from os.path import join, dirname
 from urllib.parse import quote_plus
-from datetime import timedelta, datetime
+from datetime import timedelta
 from models.holodule import Holodule
 from models.user import User
 from settings import Settings
@@ -46,7 +46,6 @@ app.config['JWT_ALGORITHM'] = 'HS256'                       # 暗号化署名の
 app.config['JWT_LEEWAY'] = 0                                # 有効期限に対する余裕時間
 app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=300) # トークンの有効期間
 app.config['JWT_NOT_BEFORE_DELTA'] = timedelta(seconds=0)   # トークンの使用を開始する相対時間
-app.config['JWT_AUTH_URL_RULE'] = '/auth'                   # 認証エンドポイントURL
 
 # JWT の認証エラーハンドラ
 @log(logger)
@@ -80,6 +79,9 @@ def login():
     whitelist = {'username', 'password'}
     if not request_body.keys() <= whitelist:
         abort(400)
+
+    u = request_body['username']
+    p = request_body['password']
 
     user = User.from_doc(db.users.find_one({"username": request_body['username']}))
     authenticated = True if user is not None and user.password == request_body['password'] else False
