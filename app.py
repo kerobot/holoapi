@@ -98,7 +98,11 @@ def login():
 @app.route('/holodules/<string:date>', methods=['GET'])
 @jwt_required()
 def holodules(date):
-    logger.info(f"username: {get_jwt_identity()} date: {date}")
+    identity = get_jwt_identity()
+    if identity == None:
+        abort(500)
+
+    logger.info(f"username: {identity} date: {date}")
 
     if len(date) != 8:
         abort(500)
