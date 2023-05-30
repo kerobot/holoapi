@@ -26,7 +26,7 @@ def get_logger(log_dir, json_path, verbose=False):
     # ロギングの設定を適用してロガーを取得
     config.dictConfig(log_config)
     logger = getLogger(__name__)
-    #logger.addFilter(CustomFilter())
+    logger.addFilter(CustomFilter())
     return logger
 
 def log(logger):
