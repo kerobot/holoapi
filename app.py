@@ -102,10 +102,10 @@ def holodules(date):
     if identity == None:
         abort(500)
 
-    logger.info(f"username: {identity} date: {date}")
-
     if len(date) != 8:
         abort(500)
+
+    logger.info(f"username: {identity} date: {date}")
 
     # MongoDB から年月日を条件にホロジュール配信予定を取得してリストに格納
     holodule_list = []
