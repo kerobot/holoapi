@@ -1,3 +1,7 @@
+"""
+環境変数（.env）からの設定値の取得
+"""
+
 import os
 from dotenv import load_dotenv
 
